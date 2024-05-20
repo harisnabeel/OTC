@@ -1,0 +1,16 @@
+[
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x0b91d1aa634b1e86f38e20286033edfc60059be820bca3949abea113d7bb4349",
+    "byteCodeMd5": "476e76ada231e1632e11a42da5ff008c",
+    "args": []
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x0b91d1aa634b1e86f38e20286033edfc60059be820bca3949abea113d7bb4349",
+    "byteCodeMd5": "476e76ada231e1632e11a42da5ff008c",
+    "args": []
+  }
+]
