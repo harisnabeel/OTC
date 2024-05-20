@@ -12,5 +12,257 @@
     "transactionHash": "0x0b91d1aa634b1e86f38e20286033edfc60059be820bca3949abea113d7bb4349",
     "byteCodeMd5": "476e76ada231e1632e11a42da5ff008c",
     "args": []
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0xb9638f7a09d21fde842c1fac0bacfaaf158d6f4e8e8ee1f80b4d63cbee0d7c4c",
+    "byteCodeMd5": "bf0cff62f062b4fed9243a7c2467fd8c",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
+  },
+  {
+    "contractName": "OTCMarketplace",
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "transactionHash": "0x65913667eb58aca3e07d875315dfb3d31b569f7cafa96d4e093f6c8ef35d3563",
+    "byteCodeMd5": "7673ae948c60d73dfe314388c5b48974",
+    "args": []
+  },
+  {
+    "contractName": "MockErc20USDT",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "transactionHash": "0x0df70974851db95a4e02da5607c858bc650ade5dc88533125c4650cdffda9e46",
+    "byteCodeMd5": "c71242b10b4afb96b4775e47249ea483",
+    "args": [
+      "USDT",
+      "USDT",
+      6
+    ]
   }
 ]

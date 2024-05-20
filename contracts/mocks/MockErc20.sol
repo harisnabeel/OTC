@@ -10,9 +10,10 @@ contract MockErc20 is ERC20, Ownable {
     constructor(
         string memory _name,
         string memory _symbol,
-        uint _tokensDecimals
+        uint8 _tokensDecimals
     ) ERC20(_name, _symbol) Ownable(msg.sender) {
         _decimals = _tokensDecimals;
+        _mint(msg.sender, 100 * 10 ** 6 * 10 ** _tokensDecimals);
     }
 
     function mint(address to, uint256 amount) public onlyOwner {

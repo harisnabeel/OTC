@@ -33,6 +33,14 @@ contract OTCMarketplace {
         CANCELLED
     }
 
+    enum OrderStatus {
+        NOT_CREATED,
+        OPEN,
+        SETTLE_FILLED,
+        SETTLE_CANCELLED,
+        ORDER_CANCELLED
+    }
+
     // STRUCTS
     struct Token {
         address token;
@@ -53,6 +61,14 @@ contract OTCMarketplace {
         address offeredBy;
     }
 
+    struct Order {
+        uint256 offerId;
+        uint256 amount;
+        address seller;
+        address buyer;
+        OrderStatus status;
+    }
+
     ////// STORAGE //////////
 
     //////// CONSTANTS ///////////
@@ -71,8 +87,11 @@ contract OTCMarketplace {
     mapping(address tokenAddress => bool isWhitelisted)
         public whitelistedTokens;
 
-    /// @notice keeps track of orders
+    /// @notice keeps track of offers
     mapping(uint256 offerId => Offer offer) public offers;
+
+    /// @notice keeps track of orders
+    mapping(uint256 orderId => Order order) orders;
 
     /// @notice currently 1:1 ratio
     uint public collateralRatio = BASIS_POINTS;
@@ -80,8 +99,11 @@ contract OTCMarketplace {
     /// @notice keeps track of last created offer id
     uint public lastOfferId;
 
-    // EVENTS
+    /// @notice keeps track of last order id
+    uint256 lastOrderId;
 
+    // EVENTS
+    // @todo change events naming convention
     event NewToken(bytes32 tokenId, uint256 settleDuration);
 
     event NewOffer(
@@ -93,6 +115,18 @@ contract OTCMarketplace {
         uint256 value,
         uint256 collateral,
         address doer
+    );
+
+    event UpdatedTokensWhitelist(address[] tokens, bool isAccepted);
+
+    event CloseOffer(uint256 offerId);
+
+    event NewOrder(
+        uint256 id,
+        uint256 offerId,
+        uint256 amount,
+        address seller,
+        address buyer
     );
 
     /// @notice places BUY/SELL order
@@ -207,5 +241,72 @@ contract OTCMarketplace {
         ) {
             revert TokenAlreadyExist(token.token);
         }
+    }
+
+    // @todo put access controller whereever needed
+    function setTokensWhitelist(
+        address[] memory tokenAddresses,
+        bool isAccepted
+    ) external {
+        uint arrLength = tokenAddresses.length;
+        for (uint256 i = 0; i < arrLength; i++) {
+            whitelistedTokens[tokenAddresses[i]] = isAccepted;
+        }
+        emit UpdatedTokensWhitelist(tokenAddresses, isAccepted);
+    }
+
+    // FILL OFFER STUFF
+
+    // @todo make this nonReentrant
+    function fillOffer(uint256 offerId, uint256 amount) external payable {
+        Offer storage offer = offers[offerId];
+        Token storage token = tokens[offer.tokenId];
+
+        require(offer.status == OfferStatus.OPEN, "Invalid Offer Status");
+        require(token.status == TokenStatus.ACTIVE, "Invalid token Status");
+        require(amount > 0, "Invalid Amount");
+        // @todo partial fill is not suppported, to be done
+        require(offer.amount == amount, "FullMatch required");
+
+        uint256 _transferAmount;
+        address buyer;
+        address seller;
+        if (offer.offerType == OfferType.BUY) {
+            _transferAmount = (offer.collateral * amount) / offer.amount;
+            buyer = offer.offeredBy;
+            seller = msg.sender;
+        } else {
+            _transferAmount = (offer.value * amount) / offer.amount;
+            buyer = msg.sender;
+            seller = offer.offeredBy;
+        }
+        // transfer value or collecteral
+        _getAmountFromUser(IERC20(offer.exToken), _transferAmount);
+        // new order
+        _fillOffer(offerId, amount, buyer, seller);
+    }
+
+    function _fillOffer(
+        uint256 offerId,
+        uint256 amount,
+        address buyer,
+        address seller
+    ) internal {
+        Offer storage offer = offers[offerId];
+        // new order
+        orders[++lastOrderId] = Order(
+            offerId,
+            amount,
+            seller,
+            buyer,
+            OrderStatus.OPEN
+        );
+
+        // check if offer is fullfilled
+        offer.filledAmount += amount;
+        offer.status = OfferStatus.FILLED;
+        emit CloseOffer(offerId);
+
+        emit NewOrder(lastOrderId, offerId, amount, seller, buyer);
     }
 }
