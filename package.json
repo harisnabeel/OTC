@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "c": "npx hardhat compile",
-    "t": "npx hardhat test",
+    "test": "npx hardhat test",
     "clean": "npx hardhat clean",
     "deploy": "npx hardhat run ./scripts/deploy.ts"
   },

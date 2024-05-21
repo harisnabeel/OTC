@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 error SettleDurationTooShort(uint duration);
 error SettleDurationTooLong(uint duration);
 error TokenAlreadyExist(address tokenAddress);
+error TokenNotCreated(bytes32 tokenId);
 
-contract OTCMarketplace {
+contract OTCMarketplace is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // to recrive NATIVE currency
@@ -76,12 +79,12 @@ contract OTCMarketplace {
     uint public constant BASIS_POINTS = 10 ** 6; // represents 100%, e.g 1000 is 0.1%
     uint256 public constant MIN_SETTLE_DURATION = 1 days;
     ///@notice to avoid DOS
-    uint256 public constant MAX_SETTLE_DURATION = 7 days;
+    uint256 public constant MAX_SETTLE_DURATION = 7 days; //@note can be changed accordingly
 
     // MAPPINGS
 
     /// @notice tokenId is generated as keccak256("token/project name")
-    mapping(bytes32 tokenId => Token) public tokens;
+    mapping(bytes32 tokenId => Token token) public tokens;
 
     /// @notice keeps track whether a token can be used for payment/collateralor not
     mapping(address tokenAddress => bool isWhitelisted)
@@ -91,7 +94,7 @@ contract OTCMarketplace {
     mapping(uint256 offerId => Offer offer) public offers;
 
     /// @notice keeps track of orders
-    mapping(uint256 orderId => Order order) orders;
+    mapping(uint256 orderId => Order order) public orders;
 
     /// @notice currently 1:1 ratio
     uint public collateralRatio = BASIS_POINTS;
@@ -100,13 +103,12 @@ contract OTCMarketplace {
     uint public lastOfferId;
 
     /// @notice keeps track of last order id
-    uint256 lastOrderId;
+    uint256 public lastOrderId;
 
     // EVENTS
-    // @todo change events naming convention
-    event NewToken(bytes32 tokenId, uint256 settleDuration);
+    event NewTokenCreated(bytes32 tokenId, uint256 settleDuration);
 
-    event NewOffer(
+    event NewOfferCreated(
         uint256 id,
         OfferType offerType,
         bytes32 tokenId,
@@ -117,17 +119,37 @@ contract OTCMarketplace {
         address doer
     );
 
-    event UpdatedTokensWhitelist(address[] tokens, bool isAccepted);
+    event TokensWhitelistUpdated(address[] tokens, bool isAccepted);
 
-    event CloseOffer(uint256 offerId);
+    event OfferClosed(uint256 offerId);
 
-    event NewOrder(
+    event NewOrderCreated(
         uint256 id,
         uint256 offerId,
         uint256 amount,
         address seller,
         address buyer
     );
+
+    event TokenSettlePhaseStarted(
+        bytes32 tokenId,
+        address tokenAddress,
+        uint settleTime
+    );
+
+    event TokenSettleDurationUpdated(
+        bytes32 tokenId,
+        uint48 oldValue,
+        uint48 newValue
+    );
+
+    event SettleFilled(uint256 orderId, uint256 totalValue, address caller);
+
+    event SettleCancelled(uint256 orderId, uint256 totalValue, address caller);
+
+    event CollateralRatioUpdated(uint oldValue, uint newValue);
+
+    constructor() Ownable(msg.sender) {}
 
     /// @notice places BUY/SELL order
     /// @dev tokenId is generated from keccak256("token/project name")
@@ -136,14 +158,13 @@ contract OTCMarketplace {
     /// @param amount amount of tokens wants to BUY/SELL
     /// @param value buy = amount user is paying , sell = collateral to lock
     /// @param exToken (exchangeToken) buy = payment token, sell = collateral token
-    // @todo put re-entrancy guard here
-    function newOffer(
+    function createNewOffer(
         OfferType offerType,
         bytes32 tokenId,
-        uint256 amount, // what i'm expecting
-        uint256 value, // what i'm willing to give
-        address exToken // what i'm paying myself
-    ) external payable {
+        uint256 amount,
+        uint256 value,
+        address exToken
+    ) external payable nonReentrant {
         Token memory token = tokens[tokenId];
         require(token.status == TokenStatus.ACTIVE, "Invalid Token");
         require(whitelistedTokens[exToken], "Invalid Offer Token");
@@ -163,23 +184,111 @@ contract OTCMarketplace {
         _newOffer(offerType, tokenId, exToken, amount, value, collateral);
     }
 
-    function _getAmountFromUser(
-        IERC20 _iexToken,
-        uint _transferAmount
-    ) internal {
-        // collateral/payment currency is in ETH
-        if (address(_iexToken) == address(0)) {
-            require(msg.value == _transferAmount, "Insufficient msg.value");
+    /// @notice fulfills an offer by offer id
+    /// @param offerId id to offer wants to fulfill
+
+    function fulfillOffer(uint256 offerId) external payable nonReentrant {
+        Offer storage offer = offers[offerId];
+        Token storage token = tokens[offer.tokenId];
+
+        require(offer.status == OfferStatus.OPEN, "Invalid Offer Status");
+        require(token.status == TokenStatus.ACTIVE, "Invalid token Status");
+        uint amount = offer.amount;
+        uint256 _transferAmount;
+        address buyer;
+        address seller;
+        if (offer.offerType == OfferType.BUY) {
+            _transferAmount = (offer.collateral * amount) / offer.amount;
+            buyer = offer.offeredBy;
+            seller = msg.sender;
+        } else {
+            _transferAmount = (offer.value * amount) / offer.amount;
+            buyer = msg.sender;
+            seller = offer.offeredBy;
         }
-        // collateral/payment currency is some whitelisted ERC20
-        else {
-            _iexToken.safeTransferFrom(
-                msg.sender,
-                address(this),
-                _transferAmount
-            );
-        }
+        // transfer value or collecteral
+        _getAmountFromUser(IERC20(offer.exToken), _transferAmount);
+        // new order
+        _fillOffer(offerId, amount, buyer, seller);
     }
+
+    //////////////////////////////////// SETTLE STUFF ///////////////////////////////////////////////////////////////////////
+
+    /// @notice called when Settle phase is started and seller wants to pay the Buyer and reclaim the collatereal
+    function settleFilled(uint256 orderId) public payable nonReentrant {
+        Order storage order = orders[orderId];
+        Offer storage offer = offers[order.offerId];
+        Token storage token = tokens[offer.tokenId];
+
+        // check condition
+        require(token.status == TokenStatus.SETTLE, "Invalid Status");
+        require(token.token != address(0), "Token Not Set");
+        require(
+            block.timestamp > token.settleTime,
+            "Settling Time Not Started"
+        );
+        require(order.seller == msg.sender, "Seller Only");
+        require(order.status == OrderStatus.OPEN, "Invalid Order Status");
+
+        uint256 value = offer.value;
+
+        // transfer token to buyer
+        IERC20 iToken = IERC20(token.token);
+        uint256 tokenAmount = order.amount;
+        // transfer token to buyer
+        iToken.safeTransferFrom(order.seller, order.buyer, tokenAmount);
+
+        // transfer liquid to seller
+        uint256 totalValue = value + offer.collateral;
+        if (offer.exToken == address(0)) {
+            // by ETH
+            (bool success, ) = order.seller.call{value: totalValue}("");
+            require(success, "Transfer Funds Fail");
+        } else {
+            // by exToken
+            IERC20 iexToken = IERC20(offer.exToken);
+            iexToken.safeTransfer(order.seller, totalValue);
+        }
+
+        order.status = OrderStatus.SETTLE_FILLED;
+
+        emit SettleFilled(orderId, totalValue, msg.sender);
+    }
+
+    /// @notice when settle phase is passed and order is not fulfilled by seller
+    /// @dev callable by anyone
+    function settleCancelled(uint256 orderId) public nonReentrant {
+        Order storage order = orders[orderId];
+        Offer storage offer = offers[order.offerId];
+        Token storage token = tokens[offer.tokenId];
+
+        require(token.status == TokenStatus.SETTLE, "Invalid Status");
+        require(
+            block.timestamp > token.settleTime + token.settleDuration,
+            "Settling Time Not Ended Yet"
+        );
+        require(order.status == OrderStatus.OPEN, "Invalid Order Status");
+
+        uint256 value = offer.value;
+
+        // transfer liquid to buyer
+        uint256 totalValue = value + offer.collateral;
+        if (offer.exToken == address(0)) {
+            // by ETH
+            (bool success, ) = order.buyer.call{value: totalValue}("");
+            require(success, "Transfer Funds Fail");
+        } else {
+            // by exToken
+            IERC20 iexToken = IERC20(offer.exToken);
+            iexToken.safeTransfer(order.buyer, totalValue);
+        }
+
+        order.status = OrderStatus.SETTLE_CANCELLED;
+
+        emit SettleCancelled(orderId, totalValue, msg.sender);
+    }
+
+    //////////////////////////////////// INTERNALS ///////////////////////////////////////////////////////////////////////
 
     function _newOffer(
         OfferType offerType,
@@ -201,7 +310,7 @@ contract OTCMarketplace {
             msg.sender
         );
 
-        emit NewOffer(
+        emit NewOfferCreated(
             lastOfferId,
             offerType,
             tokenId,
@@ -211,79 +320,6 @@ contract OTCMarketplace {
             collateral,
             msg.sender
         );
-    }
-
-    function createToken(bytes32 tokenId, uint48 settleDuration) external {
-        _validateSettleDuration(settleDuration);
-        _verifyTokenExistance(tokenId);
-
-        Token storage token = tokens[tokenId];
-
-        token.settleDuration = settleDuration;
-        token.status = TokenStatus.ACTIVE;
-        emit NewToken(tokenId, settleDuration);
-    }
-
-    function _validateSettleDuration(uint48 _settleDuration) internal pure {
-        if (_settleDuration < MIN_SETTLE_DURATION) {
-            revert SettleDurationTooShort(_settleDuration);
-        } else if (_settleDuration > MAX_SETTLE_DURATION) {
-            revert SettleDurationTooLong(_settleDuration);
-        }
-    }
-
-    function _verifyTokenExistance(bytes32 _tokenId) internal view {
-        Token memory token = tokens[_tokenId];
-        if (
-            token.status != TokenStatus.INACTIVE &&
-            token.settleDuration != 0 &&
-            token.token != address(0)
-        ) {
-            revert TokenAlreadyExist(token.token);
-        }
-    }
-
-    // @todo put access controller whereever needed
-    function setTokensWhitelist(
-        address[] memory tokenAddresses,
-        bool isAccepted
-    ) external {
-        uint arrLength = tokenAddresses.length;
-        for (uint256 i = 0; i < arrLength; i++) {
-            whitelistedTokens[tokenAddresses[i]] = isAccepted;
-        }
-        emit UpdatedTokensWhitelist(tokenAddresses, isAccepted);
-    }
-
-    // FILL OFFER STUFF
-
-    // @todo make this nonReentrant
-    function fillOffer(uint256 offerId, uint256 amount) external payable {
-        Offer storage offer = offers[offerId];
-        Token storage token = tokens[offer.tokenId];
-
-        require(offer.status == OfferStatus.OPEN, "Invalid Offer Status");
-        require(token.status == TokenStatus.ACTIVE, "Invalid token Status");
-        require(amount > 0, "Invalid Amount");
-        // @todo partial fill is not suppported, to be done
-        require(offer.amount == amount, "FullMatch required");
-
-        uint256 _transferAmount;
-        address buyer;
-        address seller;
-        if (offer.offerType == OfferType.BUY) {
-            _transferAmount = (offer.collateral * amount) / offer.amount;
-            buyer = offer.offeredBy;
-            seller = msg.sender;
-        } else {
-            _transferAmount = (offer.value * amount) / offer.amount;
-            buyer = msg.sender;
-            seller = offer.offeredBy;
-        }
-        // transfer value or collecteral
-        _getAmountFromUser(IERC20(offer.exToken), _transferAmount);
-        // new order
-        _fillOffer(offerId, amount, buyer, seller);
     }
 
     function _fillOffer(
@@ -305,8 +341,106 @@ contract OTCMarketplace {
         // check if offer is fullfilled
         offer.filledAmount += amount;
         offer.status = OfferStatus.FILLED;
-        emit CloseOffer(offerId);
+        emit OfferClosed(offerId);
 
-        emit NewOrder(lastOrderId, offerId, amount, seller, buyer);
+        emit NewOrderCreated(lastOrderId, offerId, amount, seller, buyer);
+    }
+
+    function _getAmountFromUser(
+        IERC20 _iexToken,
+        uint _transferAmount
+    ) internal {
+        // collateral/payment currency is in ETH
+        if (address(_iexToken) == address(0)) {
+            require(msg.value == _transferAmount, "Insufficient msg.value");
+        }
+        // collateral/payment currency is some whitelisted ERC20
+        else {
+            _iexToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                _transferAmount
+            );
+        }
+    }
+
+    function _verifyTokenExistance(bytes32 _tokenId) internal view {
+        Token memory token = tokens[_tokenId];
+        if (token.status != TokenStatus.INACTIVE && token.settleDuration != 0) {
+            revert TokenAlreadyExist(token.token);
+        }
+    }
+
+    function _validateSettleDuration(uint48 _settleDuration) internal pure {
+        if (_settleDuration < MIN_SETTLE_DURATION) {
+            revert SettleDurationTooShort(_settleDuration);
+        } else if (_settleDuration > MAX_SETTLE_DURATION) {
+            revert SettleDurationTooLong(_settleDuration);
+        }
+    }
+
+    //////////////////////////////////// ADMIN OPERATIONS ///////////////////////////////////////////////////////////////////////
+    function createToken(
+        bytes32 tokenId,
+        uint48 settleDuration
+    ) external onlyOwner {
+        _validateSettleDuration(settleDuration);
+        _verifyTokenExistance(tokenId);
+
+        Token storage token = tokens[tokenId];
+
+        token.settleDuration = settleDuration;
+        token.status = TokenStatus.ACTIVE;
+        emit NewTokenCreated(tokenId, settleDuration);
+    }
+
+    function setTokensWhitelist(
+        address[] memory tokenAddresses,
+        bool isAccepted
+    ) external onlyOwner {
+        uint arrLength = tokenAddresses.length;
+        for (uint256 i = 0; i < arrLength; i++) {
+            whitelistedTokens[tokenAddresses[i]] = isAccepted;
+        }
+        emit TokensWhitelistUpdated(tokenAddresses, isAccepted);
+    }
+
+    function startTokenSettlePhase(
+        bytes32 tokenId,
+        address tokenAddress
+    ) external onlyOwner {
+        Token storage _token = tokens[tokenId];
+        require(tokenAddress != address(0), "Invalid Token Address");
+        require(
+            _token.status == TokenStatus.ACTIVE ||
+                _token.status == TokenStatus.INACTIVE,
+            "Invalid Token Status"
+        );
+        _token.token = tokenAddress;
+        // update token settle status & time
+        _token.status = TokenStatus.SETTLE;
+        _token.settleTime = uint48(block.timestamp);
+
+        emit TokenSettlePhaseStarted(tokenId, tokenAddress, block.timestamp);
+    }
+
+    function updateCollateralRatio(uint newRatio) external onlyOwner {
+        uint oldValue = collateralRatio;
+        collateralRatio = newRatio;
+        emit CollateralRatioUpdated(oldValue, newRatio);
+    }
+
+    function updateSettleDuration(
+        bytes32 tokenId,
+        uint48 newDuration
+    ) external onlyOwner {
+        _validateSettleDuration(newDuration);
+        Token storage _token = tokens[tokenId];
+        if (_token.status != TokenStatus.ACTIVE) {
+            revert TokenNotCreated(tokenId);
+        }
+        uint48 oldValue = _token.settleDuration;
+        _token.settleDuration = newDuration;
+        emit TokenSettleDurationUpdated(tokenId, oldValue, newDuration);
     }
 }
