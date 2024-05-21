@@ -190,23 +190,22 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
 
         require(offer.status == OfferStatus.OPEN, "Invalid Offer Status");
         require(token.status == TokenStatus.ACTIVE, "Invalid token Status");
-        uint amount = offer.amount;
         uint256 _transferAmount;
         address buyer;
         address seller;
         if (offer.offerType == OfferType.BUY) {
-            _transferAmount = (offer.collateral * amount) / offer.amount;
+            _transferAmount = offer.collateral;
             buyer = offer.offeredBy;
             seller = msg.sender;
         } else {
-            _transferAmount = (offer.value * amount) / offer.amount;
+            _transferAmount = offer.value;
             buyer = msg.sender;
             seller = offer.offeredBy;
         }
         // transfer value or collecteral
         _getAmountFromUser(IERC20(offer.exToken), _transferAmount);
 
-        _fillOffer(offerId, amount, buyer, seller);
+        _fillOffer(offerId, offer.amount, buyer, seller);
     }
 
     //////////////////////////////////// SETTLE STUFF ///////////////////////////////////////////////////////////////////////
