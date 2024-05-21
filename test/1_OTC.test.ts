@@ -120,7 +120,6 @@ describe("OTC", function () {
       );
       expect(offerBefore.status).to.be.equal(OfferStatus.OPEN);
 
-      console.log("before fil;;;;;;;;;");
       // fill offer
       await fillOffer(otcMarketplace, 1, offerBefore.amount, bob);
 
@@ -129,7 +128,6 @@ describe("OTC", function () {
       );
 
       expect(offerAfterFill.status).to.be.equal(OfferStatus.FILLED);
-      expect(offerAfterFill.filledAmount).to.be.equal(offerBefore.amount);
     });
 
     it("Should not allow to fill already filled order", async function () {
@@ -281,7 +279,6 @@ describe("OTC", function () {
       );
 
       expect(offerAfterFill.status).to.be.equal(OfferStatus.FILLED);
-      expect(offerAfterFill.filledAmount).to.be.equal(offerBefore.amount);
     });
 
     it("Should not allow to fill already filled order", async function () {
@@ -439,7 +436,6 @@ describe("OTC", function () {
       );
 
       expect(offerAfterFill.status).to.be.equal(OfferStatus.FILLED);
-      expect(offerAfterFill.filledAmount).to.be.equal(offerBefore.amount);
     });
 
     it("Should not allow to fill already filled order", async function () {

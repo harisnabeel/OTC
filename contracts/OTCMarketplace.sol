@@ -59,7 +59,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         uint256 amount;
         uint256 value;
         uint256 collateral;
-        uint256 filledAmount;
         OfferStatus status;
         address offeredBy;
     }
@@ -170,7 +169,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         require(whitelistedTokens[exToken], "Invalid Offer Token");
         require(amount > 0 && value > 0, "Invalid Amount or Value");
         IERC20 iexToken = IERC20(exToken);
-        // collateral
         uint256 collateral = (value * collateralRatio) / BASIS_POINTS;
 
         // transfer offer value (offer buy) or collateral (offer sell)
@@ -180,7 +178,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
 
         _getAmountFromUser(iexToken, _transferAmount);
 
-        // create new offer
         _newOffer(offerType, tokenId, exToken, amount, value, collateral);
     }
 
@@ -208,7 +205,7 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         }
         // transfer value or collecteral
         _getAmountFromUser(IERC20(offer.exToken), _transferAmount);
-        // new order
+
         _fillOffer(offerId, amount, buyer, seller);
     }
 
@@ -232,20 +229,17 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
 
         uint256 value = offer.value;
 
-        // transfer token to buyer
         IERC20 iToken = IERC20(token.token);
         uint256 tokenAmount = order.amount;
-        // transfer token to buyer
+
         iToken.safeTransferFrom(order.seller, order.buyer, tokenAmount);
 
         // transfer liquid to seller
         uint256 totalValue = value + offer.collateral;
         if (offer.exToken == address(0)) {
-            // by ETH
             (bool success, ) = order.seller.call{value: totalValue}("");
             require(success, "Transfer Funds Fail");
         } else {
-            // by exToken
             IERC20 iexToken = IERC20(offer.exToken);
             iexToken.safeTransfer(order.seller, totalValue);
         }
@@ -274,11 +268,9 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         // transfer liquid to buyer
         uint256 totalValue = value + offer.collateral;
         if (offer.exToken == address(0)) {
-            // by ETH
             (bool success, ) = order.buyer.call{value: totalValue}("");
             require(success, "Transfer Funds Fail");
         } else {
-            // by exToken
             IERC20 iexToken = IERC20(offer.exToken);
             iexToken.safeTransfer(order.buyer, totalValue);
         }
@@ -305,7 +297,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
             amount,
             value,
             collateral,
-            0,
             OfferStatus.OPEN,
             msg.sender
         );
@@ -329,7 +320,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         address seller
     ) internal {
         Offer storage offer = offers[offerId];
-        // new order
         orders[++lastOrderId] = Order(
             offerId,
             amount,
@@ -338,8 +328,6 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
             OrderStatus.OPEN
         );
 
-        // check if offer is fullfilled
-        offer.filledAmount += amount;
         offer.status = OfferStatus.FILLED;
         emit OfferClosed(offerId);
 
@@ -394,6 +382,7 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         emit NewTokenCreated(tokenId, settleDuration);
     }
 
+    /// @notice whitelists those tokens that we allow for payment
     function setTokensWhitelist(
         address[] memory tokenAddresses,
         bool isAccepted
@@ -405,6 +394,8 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
         emit TokensWhitelistUpdated(tokenAddresses, isAccepted);
     }
 
+    /// @notice starts the settle phase.
+    /// @dev sell will fulfill orders after this function call
     function startTokenSettlePhase(
         bytes32 tokenId,
         address tokenAddress
@@ -417,13 +408,13 @@ contract OTCMarketplace is Ownable, ReentrancyGuard {
             "Invalid Token Status"
         );
         _token.token = tokenAddress;
-        // update token settle status & time
         _token.status = TokenStatus.SETTLE;
         _token.settleTime = uint48(block.timestamp);
 
         emit TokenSettlePhaseStarted(tokenId, tokenAddress, block.timestamp);
     }
 
+    /// @notice to control how much seller must deposit as collateral
     function updateCollateralRatio(uint newRatio) external onlyOwner {
         uint oldValue = collateralRatio;
         collateralRatio = newRatio;
